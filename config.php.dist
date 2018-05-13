@@ -1,0 +1,15 @@
+<?php
+$config = array('title' => 'AS65000',
+                'version' => '0.1',
+                'policy' => 'http://www.as65000.net/policy',
+		'debug' => false
+);
+
+$routers = array(	0 => array(	'name' => 'core1.isp.net',
+					'host' => '192.0.2.1',
+					'port' => '9876'),
+
+			1 => array(	'name' => 'core2.isp.net',
+					'host' => '192.0.2.2',
+					'port' => '9876')
+		);
