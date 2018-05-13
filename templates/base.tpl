@@ -2,9 +2,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{{ config.title }} - BGP Info</title>
-
-    <!-- Bootstrap core CSS -->
+    <title>{{ config.title }} Looking Glass</title>
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="bootstrap/js/bootstrap.min.js"></script>
@@ -14,7 +12,6 @@
       }
     </style>
   </head>
-
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
@@ -25,7 +22,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item{% block peersactive %}{% endblock %}">
-              <a class="nav-link" href="{{ config.url }}">Peers <span class="sr-only">(current)</span></a>
+              <a class="nav-link" href="{{ config.url }}">Peers</a>
             </li>
             <li class="nav-item{% block lgactive %}{% endblock %}">
               <a class="nav-link" href="?site=lg">Looking Glass</a>
@@ -36,12 +33,9 @@
             </li>
             {% endif %}
           </ul>
-
-
-
           <ul class="navbar-nav ml-auto">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ active }} </a>
+            <li class="nav-item dropdown active">
+              <a class="nav-link dropdown-toggle" href="" data-toggle="dropdown" id="navbarDropdownMenuLink" aria-haspopup="true" aria-expanded="false">{{ active }} </a>
               <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                 {% for key, value in routers if value.name != active %}
                   {% if request.site %}
@@ -53,24 +47,18 @@
               </div>
             </li>
           </ul>
-
-
-
         </div>
       </div>
     </nav>
-
     <div class="container" id="content">
-{% block title %}
-{% endblock %}
+    {% block title %}{% endblock %}
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="#">BGP</a></li>
           <li class="breadcrumb-item active" aria-current="page">{% block page %}{% endblock %}</li>
         </ol>
       </nav>
-{% block content %}
-{% endblock %}
+      {% block content %}{% endblock %}
       <footer class="border-top">
         {% block footer %}
         <p class="text-muted">Looking Glass {{ config.version|default("n/a") }}</p>

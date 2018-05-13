@@ -1,7 +1,5 @@
 {% extends "base.tpl" %}
-
 {% block lgactive %} active{% endblock %}
-
 {% block title %}
 <h1>Looking Glass</h1>
 {% endblock %}
@@ -22,8 +20,6 @@ Looking Glass
     'afi-ipv4-prefix-ipv6': 'Prefix is IPv6 but the command is IPv4',
     'afi-ipv6-prefix-ipv4': 'Prefix is IPv4 but the command is IPv6',
   }[error] ?? ('Unknown error: ' ~ error) %}
-
-
   <div class="alert alert-danger" role="alert">
     <b>Error:</b> {{ errortext }}
   </div>
@@ -38,7 +34,6 @@ Looking Glass
         <option {% if request.command == "shbgpipv6" %}selected {% endif %}value="shbgpipv6">sh bgp ipv6</option>
       </select>
     </div>
-
     <div class="col-sm">
       <label for="argument">Argument</label>
       <div class="input-group mb-3">

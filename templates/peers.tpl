@@ -10,9 +10,7 @@
 Peering Sessions
 {% endblock %}
 
-
 {% block content %}
-
       <table class="table">
         <thead class="thead-dark">
           <tr>
@@ -94,12 +92,6 @@ Peering Sessions
     </div>
   </div>
 </div>
-  {% endfor %}
 {% endfor %}
-
-
-
-
-
-
+{% endfor %}
 {% endblock %}

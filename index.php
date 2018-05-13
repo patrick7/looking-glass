@@ -9,7 +9,6 @@ if($config['debug']) {
 
 require_once 'vendor/autoload.php';
 
-
 if(!file_exists('config.php')) {
   die('Configuration not existing');
 }
@@ -64,7 +63,6 @@ if(isset($_GET['site'])) {
 /*
  * Peering Summary
 */
-
 if(!isset($_GET['site'])) {
   $data = json_decode(file_get_contents('http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/neighbors'),true);
   $peersnew = array();
