@@ -35,7 +35,7 @@
           </ul>
           <ul class="navbar-nav ml-auto">
             <li class="nav-item dropdown active">
-              <a class="nav-link dropdown-toggle" href="" data-toggle="dropdown" id="navbarDropdownMenuLink" aria-haspopup="true" aria-expanded="false">{{ active }} </a>
+              <a class="nav-link dropdown-toggle" href="" data-toggle="dropdown" id="navbarDropdownMenuLink" aria-haspopup="true" aria-expanded="false">{{ active }}</a>
               <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                 {% for key, value in routers if value.name != active %}
                   {% if request.site %}

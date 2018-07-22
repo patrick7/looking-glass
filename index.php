@@ -53,7 +53,7 @@ $twig = new Twig_Environment($loader);
 
 /*
  * Base
-*/
+ */
 $request = array();
 if(isset($_GET['site'])) {
   $request['site'] = $_GET['site'];
@@ -74,14 +74,14 @@ if(!isset($_GET['site'])) {
     }
     $sessionid++;
   }
-
+ksort($peersnew);
   echo $twig->render('peers.tpl', [ 'data' => $peersnew, 'config' => $config, 'routers' => $routers, 'active' => $_SESSION['router']['name'] ]);
 }
 
 
 /*
  * Looking Glass
-*/
+ */
 if(isset($_GET['site']) && $_GET['site'] == 'lg') {
   $data = array();
 
