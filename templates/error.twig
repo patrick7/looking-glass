@@ -1,0 +1,14 @@
+{% extends "base.twig" %}
+{% block title %}
+    <h1>Error</h1>
+{% endblock %}
+
+{% block page %}
+    Error
+{% endblock %}
+
+{% block content %}
+    <div class="alert alert-danger" role="alert">
+        <b>Error:</b> {{ error }}
+    </div>
+{% endblock %}

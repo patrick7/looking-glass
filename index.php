@@ -1,142 +1,182 @@
 <?php
 session_start();
-include('config.php');
-if($config['debug']) {
-  ini_set('display_errors', 1);
-  error_reporting(E_ALL);
-  var_dump($_SESSION);
+
+function exception_handler($exception)
+{
+    global $twig;
+    global $config;
+    global $routers;
+    echo $twig->render('error.twig', ['error' => $exception->getMessage(), 'config' => $config, 'routers' => $routers, 'active' => $_SESSION['router']['name']]);
 }
 
-require_once 'vendor/autoload.php';
-
-if(!file_exists('config.php')) {
-  die('Configuration not existing');
-}
-if(!isset($routers) || empty($routers)) {
-  die('Routers not set');
-}
-
-if(!isset($_SESSION['router'])) {
-  $_SESSION['router'] = $routers[0];
-}
-if(isset($_GET['router'])) {
-  if(!empty($routers[$_GET['router']])) {
-    $_SESSION['router'] = $routers[$_GET['router']];
-  } else {
-    die('invalid router provided');
-  }
+if ($config['debug']) {
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
+    var_dump($_SESSION);
+} else {
+    set_exception_handler('exception_handler');
 }
 
-function validateIP($ip){
-  if(strpos($ip, '/') !== false) {
-    $ip = explode('/', $ip);
-    $address = $ip[0];
-    $mask = $ip[1];
-  } else {
-    $address = $ip;
-  }
-  if(isset($mask) && !is_numeric($mask)) {
-    return false;
-  } elseif(@inet_pton($address) !== false) {
-    return true;
-  } else {
-    return false;
-  }
+if (file_exists('config.php')) {
+    require_once('config.php');
+} else {
+    throw new Exception('Configuration file not found');
 }
-function ipVersion($txt) {
-     return strpos($txt, ":") === false ? 4 : 6;
+
+if (file_exists('vendor/autoload.php')) {
+    require_once('vendor/autoload.php');
+} else {
+    throw new Exception('Composer not found');
 }
 
 $loader = new Twig_Loader_Filesystem('templates');
 $twig = new Twig_Environment($loader);
 
+if (!isset($routers) || empty($routers)) {
+    throw new Exception('No routers configured.');
+}
+
+if (!isset($_SESSION['router'])) {
+    $_SESSION['router'] = $routers[0];
+}
+if (isset($_GET['router'])) {
+    if (!empty($routers[$_GET['router']])) {
+        $_SESSION['router'] = $routers[$_GET['router']];
+    } else {
+        throw new Exception('Invalid Router.');
+    }
+}
+
+function validateip($ip)
+{
+    if (strpos($ip, '/') !== false) {
+        $ip = explode('/', $ip);
+        $address = $ip[0];
+        $mask = $ip[1];
+    } else {
+        $address = $ip;
+    }
+    if (isset($mask) && !is_numeric($mask)) {
+        return false;
+    } elseif (@inet_pton($address) !== false) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function ipversion($txt)
+{
+    return strpos($txt, ":") === false ? 4 : 6;
+}
+
+function fetchdata($url)
+{
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_URL, $url);
+    $data = curl_exec($ch);
+    if (curl_errno($ch)) {
+        throw new Exception('Connection to remote router failed.');
+    } else {
+        curl_close($ch);
+        return $data;
+    }
+}
 
 /*
  * Base
  */
 $request = array();
-if(isset($_GET['site'])) {
-  $request['site'] = $_GET['site'];
+if (isset($_GET['site'])) {
+    $request['site'] = $_GET['site'];
 }
 
 
 /*
  * Peering Summary
 */
-if(!isset($_GET['site'])) {
-  $data = json_decode(file_get_contents('http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/neighbors'),true);
-  $peersnew = array();
-  $sessionid = 0;
-  foreach($data as $peer => $parameter) {
-    foreach($parameter as $key => $value) {
-      $peersnew[$parameter['remoteAs']][$peer]['sessionid'] = $sessionid;
-      $peersnew[$parameter['remoteAs']][$peer][$key] = $value;
+if (!isset($_GET['site'])) {
+    // Fetch data
+    $summaryurl = 'http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/neighbors';
+    $result = fetchdata($summaryurl);
+
+    // Decode json
+    $data = json_decode($result, true);
+
+    // Resort peers (asn = array key)
+    $peers = array();
+    foreach ($data as $peer => $parameter) {
+        foreach ($parameter as $key => $value) {
+            $peers[$parameter['remoteAs']][$peer][$key] = $value;
+        }
     }
-    $sessionid++;
-  }
-ksort($peersnew);
-  echo $twig->render('peers.tpl', [ 'data' => $peersnew, 'config' => $config, 'routers' => $routers, 'active' => $_SESSION['router']['name'] ]);
+
+    // Sort by key (asn)
+    ksort($peers);
+
+    // Send output
+    echo $twig->render('peers.twig', ['data' => $peers, 'config' => $config, 'routers' => $routers, 'active' => $_SESSION['router']['name']]);
 }
 
 
 /*
  * Looking Glass
  */
-if(isset($_GET['site']) && $_GET['site'] == 'lg') {
-  $data = array();
+if (isset($_GET['site']) && $_GET['site'] == 'lg') {
+    $data = array();
 
-  // Errors
-  $errors = array();
+    // Errors
+    $errors = array();
 
-  if(isset($_POST) && !empty($_POST)) {
+    if (isset($_POST) && !empty($_POST)) {
 
-    // -> Command
-    if(isset($_POST['command'])) {
-      $request['command'] = trim($_POST['command']);
+        // -> Command
+        if (isset($_POST['command'])) {
+            $request['command'] = trim($_POST['command']);
 
-      if(empty($request['command'])) {
-        $errors[] = 'command-empty';
-      }
-    } else {
-      $errors[] = 'command-notset';
+            if (empty($request['command'])) {
+                $errors[] = 'command-empty';
+            }
+        } else {
+            $errors[] = 'command-notset';
+        }
+
+        // -> Argument
+        if (isset($_POST['argument'])) {
+            $request['argument'] = trim($_POST['argument']);
+
+            if (empty($request['argument'])) {
+                $errors[] = 'argument-empty';
+            } elseif (!validateip($request['argument'])) {
+                $errors[] = 'argument-invalid';
+            }
+        } else {
+            $erorrs[] = 'argument-notset';
+        }
+
+        // -> Address family
+        if (isset($request['command']) && isset($request['argument']) && !in_array('argument-invalid', $errors)) {
+            if (ipversion($request['argument']) == '4' && $request['command'] == 'shbgpipv6') {
+                $errors[] = 'afi-ipv6-prefix-ipv4';
+            } elseif (ipversion($request['argument']) == '6' && $request['command'] == 'shbgpipv4') {
+                $errors[] = 'afi-ipv4-prefix-ipv6';
+            }
+        }
+
+        // Load LG
+        if (empty($errors)) {
+            switch ($request['command']) {
+                case 'shbgpipv4':
+                    $url = 'http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/v4route?route=' . $request['argument'];
+                    $data = json_decode(fetchdata($url), true);
+                    break;
+                case 'shbgpipv6':
+                    $url = 'http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/v6route?route=' . $request['argument'];
+                    $data = json_decode(fetchdata($url), true);
+                    break;
+            }
+        }
     }
-
-    // -> Argument
-    if(isset($_POST['argument'])) {
-      $request['argument'] = trim($_POST['argument']);
-
-      if(empty($request['argument'])) {
-        $errors[] = 'argument-empty';
-      } elseif(!validateIP($request['argument'])) {
-        $errors[] = 'argument-invalid';
-      }
-    } else {
-      $erorrs[] = 'argument-notset';
-    }
-
-    // -> Address family
-    if(isset($request['command']) && isset($request['argument']) && !in_array('argument-invalid', $errors)) {
-      if(ipVersion($request['argument']) == '4' && $request['command'] == 'shbgpipv6') {
-        $errors[] = 'afi-ipv6-prefix-ipv4';
-      } elseif(ipVersion($request['argument']) == '6' && $request['command'] == 'shbgpipv4') {
-        $errors[] = 'afi-ipv4-prefix-ipv6';
-      }
-    }
-
-    // Load LG
-    if(empty($errors)) {
-      switch($request['command']) {
-        case 'shbgpipv4':
-          $url = 'http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/v4route?route=' . $request['argument'];
-          $data = json_decode(file_get_contents($url),true);
-          break;
-        case 'shbgpipv6':
-          $url = 'http://' . $_SESSION['router']['host'] . ':' . $_SESSION['router']['port'] . '/v6route?route=' . $request['argument'];
-          $data = json_decode(file_get_contents($url),true);
-          break;
-      }
-    }
-  }
-  echo $twig->render('lg.tpl', [ 'config' => $config, 'errors' => $errors, 'data' => $data, 'request' => $request, 'routers' => $routers, 'active' => $_SESSION['router']['name'] ]);
+    echo $twig->render('lg.twig', ['config' => $config, 'errors' => $errors, 'data' => $data, 'request' => $request, 'routers' => $routers, 'active' => $_SESSION['router']['name'], 'communitylookup' => $communitylookup]);
 }
-?>
