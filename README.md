@@ -1,3 +1,6 @@
+Please note: This repo is outdated and not maintained anymore. 
+
+
 # looking-glass
 
 Implements a Looking Glass for FRRouting.
